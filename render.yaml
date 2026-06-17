@@ -5,6 +5,8 @@ services:
     plan: free
     region: frankfurt
     healthCheckPath: /
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
