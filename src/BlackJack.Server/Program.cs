@@ -34,10 +34,11 @@ app.UseForwardedHeaders();
 if (app.Environment.IsDevelopment())
     app.UseWebAssemblyDebugging();
 
-app.UseCors();
-app.MapStaticAssets();
-app.UseStaticFiles();
 app.UseRouting();
+app.UseCors();
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
+app.MapStaticAssets();
 
 app.MapHub<GameHub>("/gamehub");
 app.MapFallbackToFile("index.html");

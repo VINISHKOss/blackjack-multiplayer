@@ -12,7 +12,9 @@ COPY src/ src/
 RUN dotnet publish src/BlackJack.Server/BlackJack.Server.csproj \
     -c Release \
     -o /app/publish \
-    /p:UseAppHost=false
+    /p:UseAppHost=false && \
+    test -f /app/publish/wwwroot/_framework/blazor.webassembly.js && \
+    ls /app/publish/wwwroot/_framework/*.wasm | head -3
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
