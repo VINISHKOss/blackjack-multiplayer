@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blackjack — Мультиплеер</title>
+    <meta name="description" content="Мультиплеерный Блэкджек в реальном времени" />
+    <meta name="theme-color" content="#0a0f0d" />
+    <base href="/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/casino.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="BlackJack.Client.styles.css" rel="stylesheet" />
+    <link href="manifest.webmanifest" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+    <style>
+        html, body { background: #0a0f0d; color: #fff; min-height: 100%; }
+        #app { min-height: 100vh; }
+        .loading-progress-text::after { content: "Загрузка..."; }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        Не удалось загрузить игру. Попробуйте обновить страницу.
+        <a href="." class="reload">Перезагрузить</a>
+        <span class="dismiss">🗙</span>
+    </div>
+
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+                regs.forEach(function (r) { r.unregister(); });
+            });
+        }
+
+        function showError(msg) {
+            var el = document.getElementById('blazor-error-ui');
+            if (el) {
+                el.style.display = 'block';
+                if (msg) el.prepend(document.createTextNode(msg + ' '));
+            }
+        }
+
+        Blazor.start().catch(function (err) {
+            console.error(err);
+            showError('Ошибка запуска.');
+        });
+
+        window.addEventListener('error', function () { showError(''); });
+    </script>
+</body>
+
+</html>

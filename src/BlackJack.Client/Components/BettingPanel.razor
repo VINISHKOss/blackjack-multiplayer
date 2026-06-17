@@ -1,0 +1,65 @@
+@using BlackJack.Shared.Models
+
+@if ((Phase == GamePhase.Betting || Phase == GamePhase.RoundComplete) && !IsBankrupt)
+{
+    <div class="betting-panel glass-panel p-5 animate-slide-up">
+        <div class="flex items-center justify-between mb-4">
+            <span class="text-white font-semibold">Сделайте ставку</span>
+            <span class="chip-badge">Баланс: @Chips</span>
+        </div>
+
+        <div class="flex items-center gap-3 mb-4">
+            <button class="btn-chip" @onclick="() => AdjustBet(-50)" disabled="@(BetAmount <= 50)">-50</button>
+            <button class="btn-chip" @onclick="() => AdjustBet(-10)" disabled="@(BetAmount <= 10)">-10</button>
+
+            <input type="number" @bind="BetAmount" min="1" max="@Chips"
+                   class="input-casino text-center flex-1 text-xl font-bold" />
+
+            <button class="btn-chip" @onclick="() => AdjustBet(10)" disabled="@(BetAmount >= Chips)">+10</button>
+            <button class="btn-chip" @onclick="() => AdjustBet(50)" disabled="@(BetAmount >= Chips)">+50</button>
+        </div>
+
+        <div class="flex gap-2 mb-4 flex-wrap">
+            <button class="btn-chip flex-1" @onclick="() => SetBet(50)">50</button>
+            <button class="btn-chip flex-1" @onclick="() => SetBet(100)">100</button>
+            <button class="btn-chip flex-1" @onclick="() => SetBet(250)">250</button>
+            <button class="btn-chip flex-1" @onclick="() => SetBet(500)">500</button>
+            <button class="btn-chip flex-1 text-gold" @onclick="AllIn">Ва-банк</button>
+        </div>
+
+        <button class="btn-gold w-full text-lg py-3"
+                disabled="@(BetAmount <= 0 || BetAmount > Chips || HasPlacedBet)"
+                @onclick="PlaceBet">
+            @(HasPlacedBet ? "Ставка принята ✓" : $"Поставить {BetAmount}")
+        </button>
+    </div>
+}
+else if (HasPlacedBet && Phase == GamePhase.Betting)
+{
+    <div class="text-center text-casino-muted py-4 animate-pulse">
+        Ставка @CurrentBet принята. Ожидание других игроков...
+    </div>
+}
+
+@code {
+    [Parameter] public GamePhase Phase { get; set; }
+    [Parameter] public int Chips { get; set; }
+    [Parameter] public int CurrentBet { get; set; }
+    [Parameter] public bool HasPlacedBet { get; set; }
+    [Parameter] public bool IsBankrupt { get; set; }
+    [Parameter] public EventCallback<int> OnPlaceBet { get; set; }
+
+    private int BetAmount { get; set; } = 50;
+
+    protected override void OnParametersSet()
+    {
+        if (BetAmount > Chips && Chips > 0)
+            BetAmount = Math.Min(50, Chips);
+    }
+
+    private void AdjustBet(int delta) => BetAmount = Math.Clamp(BetAmount + delta, 1, Chips);
+    private void SetBet(int amount) => BetAmount = Math.Clamp(amount, 1, Chips);
+    private void AllIn() => BetAmount = Chips;
+
+    private async Task PlaceBet() => await OnPlaceBet.InvokeAsync(BetAmount);
+}

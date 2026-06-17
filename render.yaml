@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: blackjack-multiplayer
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production

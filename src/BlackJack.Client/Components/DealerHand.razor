@@ -1,0 +1,61 @@
+@using BlackJack.Shared.Models
+
+<div class="dealer-hand text-center">
+    <div class="text-sm font-display text-gold/90 mb-3 tracking-widest uppercase">Дилер</div>
+
+    <div class="flex gap-2 justify-center flex-wrap min-h-[5.5rem]">
+        @for (var i = 0; i < Dealer.Cards.Count; i++)
+        {
+            var card = Dealer.Cards[i];
+            var isFlipping = _flippingIndices.Contains(i);
+            <div class="playing-card @(isFlipping ? "animate-card-flip" : "animate-deal")"
+                 style="@(isFlipping ? "" : $"animation-delay: {i * 150}ms")"
+                 data-face-down="@card.IsFaceDown">
+                <div class="card-inner @(card.IsFaceDown ? "is-face-down" : "is-face-up")">
+                    <div class="card-back"></div>
+                    <div class="card-face @(card.IsRed ? "text-red-500" : "text-slate-900")">
+                        <span class="card-rank">@card.DisplayName</span>
+                        <span class="card-suit">@card.SuitSymbol</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (Dealer.Cards.Count > 0)
+    {
+        <div class="mt-2 text-sm text-casino-muted">
+            @if (Dealer.Cards.Any(c => c.IsFaceDown))
+            {
+                <span>@Dealer.HandValue + ?</span>
+            }
+            else
+            {
+                <span class="@(Dealer.Status == HandStatus.Busted ? "text-red-400" : "")">
+                    @Dealer.HandValue@(Dealer.IsSoft ? " (soft)" : "")
+                </span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public DealerDto Dealer { get; set; } = new();
+
+    private readonly HashSet<int> _flippingIndices = [];
+    private List<CardDto> _previousCards = [];
+
+    protected override void OnParametersSet()
+    {
+        _flippingIndices.Clear();
+
+        for (var i = 0; i < Dealer.Cards.Count; i++)
+        {
+            var wasFaceDown = i < _previousCards.Count && _previousCards[i].IsFaceDown;
+            if (wasFaceDown && !Dealer.Cards[i].IsFaceDown)
+                _flippingIndices.Add(i);
+        }
+
+        _previousCards = Dealer.Cards.ToList();
+    }
+}

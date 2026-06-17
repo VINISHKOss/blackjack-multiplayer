@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+publish/
+.git/
+.nuget-packages/
+node_modules/
+*.md
+start.sh
+package.json
+tailwind.config.js

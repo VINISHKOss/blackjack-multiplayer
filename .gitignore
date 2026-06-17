@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+publish/
+.nuget-packages/
+node_modules/
+.DS_Store
+*.user
+*.suo
+.vscode/
+.idea/

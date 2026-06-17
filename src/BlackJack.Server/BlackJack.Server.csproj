@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlackJack.Client\BlackJack.Client.csproj" />
+    <ProjectReference Include="..\BlackJack.Shared\BlackJack.Shared.csproj" />
+  </ItemGroup>
+
+  <Target Name="FixPublishedIndexHtml" AfterTargets="Publish">
+    <ItemGroup>
+      <_ProcessedIndex Include="..\BlackJack.Client\obj\$(Configuration)\$(TargetFramework)\staticwebassets\htmlassetplaceholders\build\*.html" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_ProcessedIndex)"
+          DestinationFiles="$(PublishDir)wwwroot\index.html"
+          Condition="'@(_ProcessedIndex)' != ''" />
+  </Target>
+
+</Project>

@@ -1,0 +1,25 @@
+{
+  "name": "Blackjack Multiplayer",
+  "short_name": "Blackjack",
+  "id": "./",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a0f0d",
+  "theme_color": "#0a0f0d",
+  "description": "Мультиплеерный Блэкджек с SignalR",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    }
+  ]
+}

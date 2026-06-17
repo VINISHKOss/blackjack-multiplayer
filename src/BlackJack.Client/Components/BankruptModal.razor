@@ -1,0 +1,30 @@
+@if (IsVisible)
+{
+    <div class="modal-overlay animate-fade-in">
+        <div class="modal-content glass-panel p-8 max-w-md w-full mx-4 text-center animate-slide-up">
+            <div class="text-6xl mb-4">💸</div>
+            <h2 class="text-2xl font-display font-bold text-white mb-2">У вас закончились фишки</h2>
+            <p class="text-casino-muted mb-8">
+                Не расстраивайтесь! Вы можете попробовать снова и получить
+                <span class="text-gold font-semibold">1000 фишек</span>, оставаясь за этим столом.
+            </p>
+            <button class="btn-gold w-full text-lg py-3 mb-3" @onclick="OnRetry" disabled="@IsBusy">
+                @(IsRetrying ? "Загрузка..." : "Попробовать снова")
+            </button>
+            <button class="btn-ghost w-full text-base py-3 border border-white/20 rounded-lg" @onclick="OnLeave" disabled="@IsBusy">
+                @(IsLeaving ? "Выход..." : "Выйти из-за стола")
+            </button>
+            <p class="text-xs text-casino-muted mt-4">Фишки выдаются сервером автоматически</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public bool IsRetrying { get; set; }
+    [Parameter] public bool IsLeaving { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+    [Parameter] public EventCallback OnLeave { get; set; }
+
+    private bool IsBusy => IsRetrying || IsLeaving;
+}

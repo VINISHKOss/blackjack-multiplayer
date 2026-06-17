@@ -1,0 +1,95 @@
+@using BlackJack.Shared.Models
+
+<div class="player-hand">
+    @if (ShowName)
+    {
+        <div class="flex items-center justify-center gap-2 mb-2 px-1">
+            <span class="text-sm font-medium text-white truncate">@PlayerName</span>
+            <span class="chip-badge text-xs shrink-0">@Chips</span>
+        </div>
+    }
+
+    @if (Hands.Count == 0 && Phase == GamePhase.Betting)
+    {
+        <div class="text-xs text-casino-muted text-center py-4">Ожидание ставки...</div>
+    }
+
+    @for (var h = 0; h < Hands.Count; h++)
+    {
+        var hand = Hands[h];
+        var delay = h * 100;
+
+        <div class="mb-2 @(h > 0 ? "mt-3 pt-3 border-t border-white/10" : "")">
+            @if (Hands.Count > 1)
+            {
+                <div class="text-xs text-casino-muted mb-1">Рука @(h + 1) · Ставка @hand.Bet</div>
+            }
+
+            <div class="flex gap-2 justify-center flex-wrap min-h-[5.5rem]">
+                @for (var i = 0; i < hand.Cards.Count; i++)
+                {
+                    var card = hand.Cards[i];
+                    <div class="playing-card animate-deal"
+                         style="animation-delay: @(delay + i * 120)ms"
+                         data-face-down="@card.IsFaceDown">
+                        @if (card.IsFaceDown)
+                        {
+                            <div class="card-back"></div>
+                        }
+                        else
+                        {
+                            <div class="card-face @(card.IsRed ? "text-red-500" : "text-slate-900")">
+                                <span class="card-rank">@card.DisplayName</span>
+                                <span class="card-suit">@card.SuitSymbol</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (!hand.Cards.Any(c => c.IsFaceDown) && hand.Cards.Count > 0)
+            {
+                <div class="text-center mt-1 text-xs">
+                    <span class="@(hand.Status == HandStatus.Busted ? "text-red-400" : "text-casino-muted")">
+                        @hand.HandValue@(hand.IsSoft ? " (soft)" : "")
+                    </span>
+                    @if (ShowResults && hand.Result != HandResult.None)
+                    {
+                        <span class="ml-2 font-semibold @ResultClass(hand.Result) animate-fade-in">@ResultLabel(hand.Result)</span>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(LastAction))
+    {
+        <div class="text-xs text-center text-gold/80 mt-1 animate-fade-in">@LastAction</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string PlayerName { get; set; } = "";
+    [Parameter] public int Chips { get; set; }
+    [Parameter] public IReadOnlyList<HandDto> Hands { get; set; } = [];
+    [Parameter] public bool ShowName { get; set; } = true;
+    [Parameter] public bool ShowResults { get; set; } = true;
+    [Parameter] public GamePhase Phase { get; set; }
+    [Parameter] public string? LastAction { get; set; }
+
+    private static string ResultLabel(HandResult r) => r switch
+    {
+        HandResult.Win => "Победа",
+        HandResult.Lose => "Проигрыш",
+        HandResult.Push => "Ничья",
+        HandResult.Blackjack => "Блэкджек!",
+        _ => ""
+    };
+
+    private static string ResultClass(HandResult r) => r switch
+    {
+        HandResult.Win or HandResult.Blackjack => "text-emerald-400",
+        HandResult.Lose => "text-red-400",
+        _ => "text-amber-300"
+    };
+}

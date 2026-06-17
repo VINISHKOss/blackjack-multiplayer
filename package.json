@@ -1,0 +1,11 @@
+{
+  "name": "blackjack",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/BlackJack.Client/wwwroot/css/input.css -o ./src/BlackJack.Client/wwwroot/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./src/BlackJack.Client/wwwroot/css/input.css -o ./src/BlackJack.Client/wwwroot/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

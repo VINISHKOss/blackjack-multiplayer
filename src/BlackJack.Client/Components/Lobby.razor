@@ -1,0 +1,157 @@
+@inject GameHubService Hub
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<div class="min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="text-center mb-10">
+        <h1 class="text-5xl font-display font-bold text-gold-gradient mb-3">♠ BLACKJACK ♥</h1>
+        <p class="text-casino-muted text-lg">Мультиплеер · до 5 игроков за столом</p>
+    </div>
+
+    <div class="w-full max-w-lg glass-panel p-8">
+        <label class="block text-sm text-casino-muted mb-2">Ваше имя</label>
+        <input @bind="playerName" @bind:event="oninput"
+               class="input-casino w-full mb-6"
+               placeholder="Введите имя..."
+               maxlength="20" />
+
+        <div class="flex gap-3 mb-8">
+            <input @bind="newTableName" @bind:event="oninput"
+                   class="input-casino flex-1"
+                   placeholder="Название нового стола..." />
+            <button class="btn-gold whitespace-nowrap" @onclick="CreateTable" disabled="@isBusy">
+                Создать стол
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="bg-red-900/50 border border-red-500/50 text-red-200 rounded-lg px-4 py-3 mb-4 text-sm">
+                @errorMessage
+            </div>
+        }
+
+        <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Открытые столы
+        </h2>
+
+        @if (tables.Count == 0)
+        {
+            <p class="text-casino-muted text-center py-8">Нет открытых столов. Создайте первый!</p>
+        }
+        else
+        {
+            <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                @foreach (var table in tables)
+                {
+                    <div class="table-list-item flex items-center justify-between p-4 rounded-xl">
+                        <div>
+                            <div class="font-semibold text-white">@table.Name</div>
+                            <div class="text-sm text-casino-muted">
+                                @table.PlayerCount / @table.MaxPlayers игроков · @PhaseLabel(table.Phase)
+                            </div>
+                        </div>
+                        <button class="btn-emerald"
+                                disabled="@(isBusy || table.PlayerCount >= table.MaxPlayers)"
+                                @onclick="() => JoinTable(table.Id)">
+                            Войти
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="mt-6 text-center text-xs text-casino-muted">
+            @if (Hub.IsConnected)
+            {
+                <span class="text-emerald-400">● Подключено к серверу</span>
+            }
+            else
+            {
+                <span class="text-amber-400">○ Подключение...</span>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<TableSummary> tables = [];
+    private string playerName = $"Player{Random.Shared.Next(100, 999)}";
+    private string newTableName = "";
+    private string? errorMessage;
+    private bool isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Hub.PlayerName = playerName;
+        Hub.TablesUpdated += OnTablesUpdated;
+        Hub.ErrorReceived += OnError;
+
+        try
+        {
+            await Hub.EnsureConnectedAsync();
+            tables = (await Hub.GetTablesAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка подключения: {ex.Message}";
+        }
+    }
+
+    private void OnTablesUpdated(IReadOnlyList<TableSummary> updated)
+    {
+        tables = updated.ToList();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnError(string msg)
+    {
+        errorMessage = msg;
+        isBusy = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CreateTable()
+    {
+        if (isBusy) return;
+        isBusy = true;
+        errorMessage = null;
+        Hub.PlayerName = playerName;
+
+        var dto = await Hub.CreateTableAsync(string.IsNullOrWhiteSpace(newTableName) ? "Blackjack Table" : newTableName);
+        isBusy = false;
+
+        if (dto is not null)
+            Navigation.NavigateTo($"/table/{dto.Id}");
+    }
+
+    private async Task JoinTable(string tableId)
+    {
+        if (isBusy) return;
+        isBusy = true;
+        errorMessage = null;
+        Hub.PlayerName = playerName;
+
+        var dto = await Hub.JoinTableAsync(tableId);
+        isBusy = false;
+
+        if (dto is not null)
+            Navigation.NavigateTo($"/table/{tableId}");
+    }
+
+    private static string PhaseLabel(GamePhase phase) => phase switch
+    {
+        GamePhase.Betting => "Ставки",
+        GamePhase.PlayerTurn => "Игра",
+        GamePhase.DealerTurn => "Дилер",
+        GamePhase.RoundComplete => "Между раундами",
+        _ => "Ожидание"
+    };
+
+    public void Dispose()
+    {
+        Hub.TablesUpdated -= OnTablesUpdated;
+        Hub.ErrorReceived -= OnError;
+    }
+}

@@ -1,0 +1,214 @@
+@page "/table/{TableId}"
+@inject GameHubService Hub
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<BankruptModal IsVisible="@showBankruptModal"
+               IsRetrying="@isRetrying"
+               IsLeaving="@isLeaving"
+               OnRetry="RetryBankrupt"
+               OnLeave="LeaveTable" />
+
+<div class="game-table-container min-h-screen flex flex-col">
+    <header class="flex items-center justify-between px-4 py-3 bg-black/40 backdrop-blur-sm border-b border-white/5 z-10">
+        <button class="btn-ghost text-sm" @onclick="LeaveTable">← Лобби</button>
+        <div class="text-center">
+            <h1 class="font-display text-gold-gradient text-lg font-bold">@(_state?.Name ?? "Стол")</h1>
+            <p class="text-xs text-casino-muted">@PhaseLabel(_state?.Phase ?? GamePhase.WaitingForPlayers)</p>
+        </div>
+        <div class="chip-badge">@(_me?.Chips ?? 0)</div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="mx-4 mt-3 bg-red-900/50 border border-red-500/50 text-red-200 rounded-lg px-4 py-2 text-sm">
+            @errorMessage
+        </div>
+    }
+
+    @if (_state?.LastEventMessage is not null)
+    {
+        <div class="text-center text-sm text-gold/70 py-2 animate-fade-in">@_state.LastEventMessage</div>
+    }
+
+    <div class="flex-1 relative flex flex-col items-center justify-between py-6 px-4">
+        <div class="w-full max-w-4xl">
+            <DealerHand Dealer="@(_state?.Dealer ?? new DealerDto())" />
+        </div>
+
+        <div class="table-felt w-full max-w-5xl mx-auto rounded-[3rem] px-4 py-8 relative">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                @if (_state is not null)
+                {
+                    @foreach (var seat in Enumerable.Range(0, TableState.MaxPlayers))
+                    {
+                        var player = _state.Players.FirstOrDefault(p => p.SeatIndex == seat);
+                        <div class="seat-slot @(player is null ? "opacity-30" : "")">
+                            @if (player is not null)
+                            {
+                                <PlayerHand PlayerName="@player.Name"
+                                            Chips="@player.Chips"
+                                            Hands="@player.Hands"
+                                            ShowResults="@(_state.Phase == GamePhase.RoundComplete)"
+                                            Phase="@_state.Phase"
+                                            LastAction="@player.LastActionMessage" />
+                            }
+                            else
+                            {
+                                <div class="text-center text-casino-muted text-sm py-8 border border-dashed border-white/10 rounded-xl">
+                                    Свободное место
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="w-full max-w-lg mt-4">
+            @if (_me is not null)
+            {
+                <BettingPanel Phase="@(_state?.Phase ?? GamePhase.Betting)"
+                              Chips="@_me.Chips"
+                              CurrentBet="@_me.CurrentBet"
+                              HasPlacedBet="@_me.HasPlacedBet"
+                              IsBankrupt="@_me.IsBankrupt"
+                              OnPlaceBet="PlaceBet" />
+
+                @if (IsMyTurn && _activeHand is not null)
+                {
+                    <div class="action-panel glass-panel p-4 mt-4 flex gap-2 flex-wrap justify-center animate-slide-up">
+                        <button class="btn-emerald flex-1 min-w-[5rem]" @onclick="() => DoAction(GameAction.Hit)">Hit</button>
+                        <button class="btn-gold flex-1 min-w-[5rem]" @onclick="() => DoAction(GameAction.Stand)">Stand</button>
+                        @if (CanDouble)
+                        {
+                            <button class="btn-chip flex-1 min-w-[5rem]" @onclick="() => DoAction(GameAction.Double)">Double</button>
+                        }
+                        @if (CanSplit)
+                        {
+                            <button class="btn-chip flex-1 min-w-[5rem]" @onclick="() => DoAction(GameAction.Split)">Split</button>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string TableId { get; set; } = "";
+
+    private TableStateDto? _state;
+    private PlayerDto? _me;
+    private HandDto? _activeHand;
+    private string? errorMessage;
+    private bool showBankruptModal;
+    private bool isRetrying;
+    private bool isLeaving;
+    private bool IsMyTurn => _me is not null && _state?.ActivePlayerId == _me.Id;
+    private bool CanDouble => _activeHand is not null && _me is not null &&
+                              _activeHand.Cards.Count == 2 && _me.Chips >= _activeHand.Bet;
+    private bool CanSplit => _activeHand is not null && _me is not null &&
+                             _activeHand.Cards.Count == 2 &&
+                             _activeHand.Cards[0].Rank == _activeHand.Cards[1].Rank &&
+                             _me.Chips >= _activeHand.Bet;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Hub.TableUpdated += OnTableUpdated;
+        Hub.ErrorReceived += OnError;
+
+        try
+        {
+            await Hub.EnsureConnectedAsync();
+
+            if (Hub.TableId != TableId || _state is null)
+            {
+                var dto = await Hub.JoinTableAsync(TableId);
+                if (dto is null)
+                {
+                    Navigation.NavigateTo("/");
+                    return;
+                }
+                UpdateState(dto);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private void OnTableUpdated(TableStateDto dto)
+    {
+        if (dto.Id == TableId)
+            UpdateState(dto);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnError(string msg)
+    {
+        errorMessage = msg;
+        isRetrying = false;
+        isLeaving = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateState(TableStateDto dto)
+    {
+        _state = dto;
+        _me = dto.Players.FirstOrDefault(p => p.Id == Hub.PlayerId)
+              ?? dto.Players.FirstOrDefault(p => p.Name == Hub.PlayerName);
+
+        if (_me is not null)
+            Hub.PlayerId = _me.Id;
+
+        showBankruptModal = _me?.IsBankrupt == true;
+        _activeHand = _me is not null && _me.Hands.Count > _me.CurrentHandIndex
+            ? _me.Hands[_me.CurrentHandIndex]
+            : _me?.Hands.FirstOrDefault();
+    }
+
+    private async Task PlaceBet(int amount)
+    {
+        errorMessage = null;
+        await Hub.PlaceBetAsync(amount);
+    }
+
+    private async Task DoAction(GameAction action)
+    {
+        errorMessage = null;
+        await Hub.PlayerActionAsync(action);
+    }
+
+    private async Task RetryBankrupt()
+    {
+        isRetrying = true;
+        await Hub.RetryAfterBankruptAsync();
+        isRetrying = false;
+    }
+
+    private async Task LeaveTable()
+    {
+        isLeaving = true;
+        await Hub.LeaveTableAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    private static string PhaseLabel(GamePhase phase) => phase switch
+    {
+        GamePhase.Betting => "Фаза ставок",
+        GamePhase.Dealing => "Раздача...",
+        GamePhase.PlayerTurn => "Ход игроков",
+        GamePhase.DealerTurn => "Ход дилера",
+        GamePhase.Settlement => "Подсчёт",
+        GamePhase.RoundComplete => "Раунд завершён",
+        _ => "Ожидание игроков"
+    };
+
+    public void Dispose()
+    {
+        Hub.TableUpdated -= OnTableUpdated;
+        Hub.ErrorReceived -= OnError;
+    }
+}

@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .casino-bg {
+    @apply bg-casino-dark text-white font-sans;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(13, 92, 58, 0.25) 0%, transparent 60%),
+      url('/images/casino-bg.svg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+
+  .glass-panel {
+    @apply bg-black/50 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl;
+  }
+
+  .table-felt {
+    background-image: url('/images/table-felt.svg');
+    background-size: cover;
+    background-position: center;
+    background-color: #0d5c3a;
+    box-shadow:
+      inset 0 0 80px rgba(0, 0, 0, 0.5),
+      0 20px 60px rgba(0, 0, 0, 0.6);
+    border: 4px solid rgba(212, 175, 55, 0.3);
+  }
+
+  .text-gold-gradient {
+    @apply bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200 bg-clip-text text-transparent;
+  }
+
+  .input-casino {
+    @apply bg-black/40 border border-white/20 rounded-lg px-4 py-2.5 text-white
+           placeholder:text-casino-muted focus:outline-none focus:ring-2 focus:ring-amber-400/50
+           focus:border-amber-400/50 transition;
+  }
+
+  .btn-gold {
+    @apply bg-gradient-to-r from-amber-500 to-yellow-600 text-black font-semibold
+           px-5 py-2.5 rounded-lg hover:from-amber-400 hover:to-yellow-500
+           disabled:opacity-40 disabled:cursor-not-allowed transition shadow-lg shadow-amber-900/30;
+  }
+
+  .btn-emerald {
+    @apply bg-emerald-600 text-white font-semibold px-5 py-2.5 rounded-lg
+           hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition;
+  }
+
+  .btn-chip {
+    @apply bg-white/10 border border-white/20 text-white font-medium px-4 py-2 rounded-lg
+           hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition;
+  }
+
+  .btn-ghost {
+    @apply text-casino-muted hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-white/5;
+  }
+
+  .chip-badge {
+    @apply bg-gradient-to-br from-amber-500 to-amber-700 text-black font-bold
+           px-3 py-1 rounded-full text-sm shadow-md border-2 border-amber-300/50;
+  }
+
+  .table-list-item {
+    @apply bg-white/5 border border-white/10 hover:border-amber-400/30 transition;
+  }
+
+  .playing-card {
+    @apply w-14 h-20 sm:w-16 sm:h-24 rounded-lg shadow-lg relative overflow-hidden;
+    perspective: 600px;
+  }
+
+  .card-face {
+    @apply w-full h-full bg-white rounded-lg flex flex-col items-center justify-center
+           font-bold text-lg shadow-inner border border-gray-200;
+    background-image: url('/images/card-face.svg');
+    background-size: cover;
+  }
+
+  .card-back {
+    @apply w-full h-full rounded-lg;
+    background-image: url('/images/card-back.svg');
+    background-size: cover;
+    background-color: #1a365d;
+    border: 2px solid #2c5282;
+  }
+
+  .card-rank {
+    @apply text-xl leading-none;
+  }
+
+  .card-suit {
+    @apply text-2xl leading-none mt-0.5;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm;
+  }
+
+  .modal-content {
+    @apply relative z-10;
+  }
+
+  .seat-slot {
+    @apply transition-all duration-300;
+  }
+}

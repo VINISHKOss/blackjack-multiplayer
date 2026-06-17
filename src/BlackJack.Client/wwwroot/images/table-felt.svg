@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+  <defs>
+    <radialGradient id="felt" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#117a4f"/>
+      <stop offset="100%" stop-color="#0a4d32"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="600" cy="300" rx="580" ry="280" fill="url(#felt)"/>
+  <ellipse cx="600" cy="300" rx="560" ry="260" fill="none" stroke="#d4af37" stroke-width="3" opacity="0.4"/>
+  <text x="600" y="310" text-anchor="middle" fill="#d4af37" opacity="0.15" font-size="48" font-family="serif">BLACKJACK</text>
+</svg>
