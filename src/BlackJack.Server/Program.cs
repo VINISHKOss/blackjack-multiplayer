@@ -36,7 +36,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseCors();
-app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.MapStaticAssets();
 
