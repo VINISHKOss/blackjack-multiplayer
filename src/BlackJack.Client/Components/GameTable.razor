@@ -34,39 +34,31 @@
             <DealerHand Dealer="@(_state?.Dealer ?? new DealerDto())" Compact="true" />
         </div>
 
-        @* Mobile: other players as compact strip *@
-        @if (_state is not null && OtherPlayers.Any())
-        {
-            <div class="other-players-strip mobile-only">
-                @foreach (var player in OtherPlayers)
-                {
-                    <div class="other-player-chip @(player.IsBankrupt ? "is-bankrupt" : "")">
-                        <span class="other-player-chip__name">@player.Name</span>
-                        <span class="other-player-chip__chips">@player.Chips</span>
-                        @if (player.HasPlacedBet && _state.Phase == GamePhase.Betting)
-                        {
-                            <span class="other-player-chip__bet">@player.CurrentBet</span>
-                        }
-                    </div>
-                }
-            </div>
-        }
-
-        @* Mobile: my seat prominent *@
-        <div class="my-seat-mobile mobile-only">
-            @if (_me is not null)
+        @* Mobile: geometric layout by player count *@
+        <div class="mobile-table-zone mobile-only">
+            @if (_state is null || _me is null)
             {
-                <PlayerHand PlayerName="@_me.Name"
-                            Chips="@_me.Chips"
-                            Hands="@_me.Hands"
-                            ShowResults="@(_state?.Phase == GamePhase.RoundComplete)"
-                            Phase="@(_state?.Phase ?? GamePhase.Betting)"
-                            LastAction="@_me.LastActionMessage"
-                            Compact="true" />
+                <div class="text-center text-casino-muted text-sm py-6">Подключение к столу...</div>
             }
             else
             {
-                <div class="text-center text-casino-muted text-sm py-6">Подключение к столу...</div>
+                var playerCount = _state.Players.Count;
+                <div class="mobile-table mobile-table--@playerCount">
+                    @foreach (var slot in GetMobileSlots(_state.Players, playerCount))
+                    {
+                        var isMe = slot.Player.Id == _me.Id;
+                        var isActive = _state.ActivePlayerId == slot.Player.Id;
+                        <div class="mobile-table__slot mobile-table__slot--@slot.Position @(isMe ? "is-me" : "") @(isActive ? "is-active" : "")">
+                            <PlayerHand PlayerName="@slot.Player.Name"
+                                        Chips="@slot.Player.Chips"
+                                        Hands="@slot.Player.Hands"
+                                        ShowResults="@(_state.Phase == GamePhase.RoundComplete)"
+                                        Phase="@_state.Phase"
+                                        LastAction="@slot.Player.LastActionMessage"
+                                        Compact="@(playerCount > 1)" />
+                        </div>
+                    }
+                </div>
             }
         </div>
 
@@ -140,8 +132,6 @@
     private bool isRetrying;
     private bool isLeaving;
     private bool IsMyTurn => _me is not null && _state?.ActivePlayerId == _me.Id;
-    private IEnumerable<PlayerDto> OtherPlayers =>
-        _state?.Players.Where(p => p.Id != _me?.Id) ?? [];
     private bool CanDouble => _activeHand is not null && _me is not null &&
                               _activeHand.Cards.Count == 2 && _me.Chips >= _activeHand.Bet;
     private bool CanSplit => _activeHand is not null && _me is not null &&
@@ -229,6 +219,47 @@
         isLeaving = true;
         await Hub.LeaveTableAsync();
         Navigation.NavigateTo("/");
+    }
+
+    private readonly record struct MobileSeatSlot(string Position, PlayerDto Player);
+
+    private IEnumerable<MobileSeatSlot> GetMobileSlots(IReadOnlyList<PlayerDto> players, int count)
+    {
+        if (count <= 0 || _me is null)
+            yield break;
+
+        switch (count)
+        {
+            case 1:
+                yield return new("center", _me);
+                yield break;
+            case 2:
+                yield return new("top", _me);
+                yield return new("bottom", players.First(p => p.Id != _me.Id));
+                yield break;
+            case 3:
+            {
+                var others = players.Where(p => p.Id != _me.Id).OrderBy(p => p.SeatIndex).ToList();
+                yield return new("top", _me);
+                yield return new("bl", others[0]);
+                yield return new("br", others[1]);
+                yield break;
+            }
+            default:
+            {
+                var ordered = players.OrderBy(p => p.SeatIndex).ToList();
+                var positions = count switch
+                {
+                    4 => new[] { "tl", "tr", "bl", "br" },
+                    5 => new[] { "tl", "tr", "bl", "bc", "br" },
+                    _ => Array.Empty<string>()
+                };
+
+                for (var i = 0; i < ordered.Count && i < positions.Length; i++)
+                    yield return new(positions[i], ordered[i]);
+                yield break;
+            }
+        }
     }
 
     private static string PhaseLabel(GamePhase phase) => phase switch
