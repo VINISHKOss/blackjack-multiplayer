@@ -1,6 +1,6 @@
 @using BlackJack.Shared.Models
 
-<div class="player-hand">
+<div class="player-hand @(Compact ? "player-hand--compact" : "")">
     @if (ShowName)
     {
         <div class="flex items-center justify-center gap-2 mb-2 px-1">
@@ -76,6 +76,7 @@
     [Parameter] public bool ShowResults { get; set; } = true;
     [Parameter] public GamePhase Phase { get; set; }
     [Parameter] public string? LastAction { get; set; }
+    [Parameter] public bool Compact { get; set; }
 
     private static string ResultLabel(HandResult r) => r switch
     {

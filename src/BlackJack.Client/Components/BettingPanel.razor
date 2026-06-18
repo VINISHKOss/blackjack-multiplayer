@@ -2,42 +2,67 @@
 
 @if ((Phase == GamePhase.Betting || Phase == GamePhase.RoundComplete) && !IsBankrupt)
 {
-    <div class="betting-panel glass-panel p-5 animate-slide-up">
-        <div class="flex items-center justify-between mb-4">
-            <span class="text-white font-semibold">Сделайте ставку</span>
-            <span class="chip-badge">Баланс: @Chips</span>
+    <div class="betting-panel glass-panel animate-slide-up">
+        @* Desktop layout *@
+        <div class="betting-panel__full">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-white font-semibold">Сделайте ставку</span>
+                <span class="chip-badge">Баланс: @Chips</span>
+            </div>
+
+            <div class="flex items-center gap-3 mb-4">
+                <button class="btn-chip" @onclick="() => AdjustBet(-50)" disabled="@(BetAmount <= 50)">-50</button>
+                <button class="btn-chip" @onclick="() => AdjustBet(-10)" disabled="@(BetAmount <= 10)">-10</button>
+                <input type="number" @bind="BetAmount" min="1" max="@Chips"
+                       class="input-casino text-center flex-1 text-xl font-bold" />
+                <button class="btn-chip" @onclick="() => AdjustBet(10)" disabled="@(BetAmount >= Chips)">+10</button>
+                <button class="btn-chip" @onclick="() => AdjustBet(50)" disabled="@(BetAmount >= Chips)">+50</button>
+            </div>
+
+            <div class="flex gap-2 mb-4 flex-wrap">
+                <button class="btn-chip flex-1" @onclick="() => SetBet(50)">50</button>
+                <button class="btn-chip flex-1" @onclick="() => SetBet(100)">100</button>
+                <button class="btn-chip flex-1" @onclick="() => SetBet(250)">250</button>
+                <button class="btn-chip flex-1" @onclick="() => SetBet(500)">500</button>
+                <button class="btn-chip flex-1 text-gold" @onclick="AllIn">Ва-банк</button>
+            </div>
+
+            <button class="btn-gold w-full text-lg py-3"
+                    disabled="@(BetAmount <= 0 || BetAmount > Chips || HasPlacedBet)"
+                    @onclick="PlaceBet">
+                @(HasPlacedBet ? "Ставка принята ✓" : $"Поставить {BetAmount}")
+            </button>
         </div>
 
-        <div class="flex items-center gap-3 mb-4">
-            <button class="btn-chip" @onclick="() => AdjustBet(-50)" disabled="@(BetAmount <= 50)">-50</button>
-            <button class="btn-chip" @onclick="() => AdjustBet(-10)" disabled="@(BetAmount <= 10)">-10</button>
+        @* Mobile compact layout *@
+        <div class="betting-panel__compact">
+            <div class="betting-compact__chips">
+                <button class="btn-chip betting-quick" @onclick="() => SetBet(50)">50</button>
+                <button class="btn-chip betting-quick" @onclick="() => SetBet(100)">100</button>
+                <button class="btn-chip betting-quick" @onclick="() => SetBet(250)">250</button>
+                <button class="btn-chip betting-quick text-gold" @onclick="AllIn">Max</button>
+            </div>
 
-            <input type="number" @bind="BetAmount" min="1" max="@Chips"
-                   class="input-casino text-center flex-1 text-xl font-bold" />
-
-            <button class="btn-chip" @onclick="() => AdjustBet(10)" disabled="@(BetAmount >= Chips)">+10</button>
-            <button class="btn-chip" @onclick="() => AdjustBet(50)" disabled="@(BetAmount >= Chips)">+50</button>
+            <div class="betting-compact__row">
+                <button class="btn-chip betting-step" @onclick="() => AdjustBet(-10)" disabled="@(BetAmount <= 10)">−</button>
+                <div class="betting-compact__amount">
+                    <span class="betting-compact__label">Ставка</span>
+                    <span class="betting-compact__value">@BetAmount</span>
+                </div>
+                <button class="btn-chip betting-step" @onclick="() => AdjustBet(10)" disabled="@(BetAmount >= Chips)">+</button>
+                <button class="btn-gold betting-place"
+                        disabled="@(BetAmount <= 0 || BetAmount > Chips || HasPlacedBet)"
+                        @onclick="PlaceBet">
+                    @(HasPlacedBet ? "✓" : "Ставка")
+                </button>
+            </div>
         </div>
-
-        <div class="flex gap-2 mb-4 flex-wrap">
-            <button class="btn-chip flex-1" @onclick="() => SetBet(50)">50</button>
-            <button class="btn-chip flex-1" @onclick="() => SetBet(100)">100</button>
-            <button class="btn-chip flex-1" @onclick="() => SetBet(250)">250</button>
-            <button class="btn-chip flex-1" @onclick="() => SetBet(500)">500</button>
-            <button class="btn-chip flex-1 text-gold" @onclick="AllIn">Ва-банк</button>
-        </div>
-
-        <button class="btn-gold w-full text-lg py-3"
-                disabled="@(BetAmount <= 0 || BetAmount > Chips || HasPlacedBet)"
-                @onclick="PlaceBet">
-            @(HasPlacedBet ? "Ставка принята ✓" : $"Поставить {BetAmount}")
-        </button>
     </div>
 }
 else if (HasPlacedBet && Phase == GamePhase.Betting)
 {
-    <div class="text-center text-casino-muted py-4 animate-pulse">
-        Ставка @CurrentBet принята. Ожидание других игроков...
+    <div class="betting-waiting">
+        Ставка @CurrentBet принята · ожидание игроков...
     </div>
 }
 

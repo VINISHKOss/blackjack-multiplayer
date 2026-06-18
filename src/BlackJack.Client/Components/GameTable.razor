@@ -9,10 +9,10 @@
                OnRetry="RetryBankrupt"
                OnLeave="LeaveTable" />
 
-<div class="game-table-container min-h-screen flex flex-col">
-    <header class="flex items-center justify-between px-4 py-3 bg-black/40 backdrop-blur-sm border-b border-white/5 z-10">
+<div class="game-table-container">
+    <header class="game-header">
         <button class="btn-ghost text-sm" @onclick="LeaveTable">← Лобби</button>
-        <div class="text-center">
+        <div class="text-center game-header__title">
             <h1 class="font-display text-gold-gradient text-lg font-bold">@(_state?.Name ?? "Стол")</h1>
             <p class="text-xs text-casino-muted">@PhaseLabel(_state?.Phase ?? GamePhase.WaitingForPlayers)</p>
         </div>
@@ -21,23 +21,58 @@
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
-        <div class="mx-4 mt-3 bg-red-900/50 border border-red-500/50 text-red-200 rounded-lg px-4 py-2 text-sm">
-            @errorMessage
-        </div>
+        <div class="game-banner game-banner--error">@errorMessage</div>
     }
 
     @if (_state?.LastEventMessage is not null)
     {
-        <div class="text-center text-sm text-gold/70 py-2 animate-fade-in">@_state.LastEventMessage</div>
+        <div class="game-banner game-banner--event">@_state.LastEventMessage</div>
     }
 
-    <div class="flex-1 relative flex flex-col items-center justify-between py-6 px-4">
-        <div class="w-full max-w-4xl">
-            <DealerHand Dealer="@(_state?.Dealer ?? new DealerDto())" />
+    <div class="game-table-stage">
+        <div class="game-dealer-zone">
+            <DealerHand Dealer="@(_state?.Dealer ?? new DealerDto())" Compact="true" />
         </div>
 
-        <div class="table-felt w-full max-w-5xl mx-auto rounded-[3rem] px-4 py-8 relative">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        @* Mobile: other players as compact strip *@
+        @if (_state is not null && OtherPlayers.Any())
+        {
+            <div class="other-players-strip mobile-only">
+                @foreach (var player in OtherPlayers)
+                {
+                    <div class="other-player-chip @(player.IsBankrupt ? "is-bankrupt" : "")">
+                        <span class="other-player-chip__name">@player.Name</span>
+                        <span class="other-player-chip__chips">@player.Chips</span>
+                        @if (player.HasPlacedBet && _state.Phase == GamePhase.Betting)
+                        {
+                            <span class="other-player-chip__bet">@player.CurrentBet</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        @* Mobile: my seat prominent *@
+        <div class="my-seat-mobile mobile-only">
+            @if (_me is not null)
+            {
+                <PlayerHand PlayerName="@_me.Name"
+                            Chips="@_me.Chips"
+                            Hands="@_me.Hands"
+                            ShowResults="@(_state?.Phase == GamePhase.RoundComplete)"
+                            Phase="@(_state?.Phase ?? GamePhase.Betting)"
+                            LastAction="@_me.LastActionMessage"
+                            Compact="true" />
+            }
+            else
+            {
+                <div class="text-center text-casino-muted text-sm py-6">Подключение к столу...</div>
+            }
+        </div>
+
+        @* Desktop: full 5-seat grid *@
+        <div class="table-felt desktop-only">
+            <div class="seat-grid">
                 @if (_state is not null)
                 {
                     @foreach (var seat in Enumerable.Range(0, TableState.MaxPlayers))
@@ -55,44 +90,43 @@
                             }
                             else
                             {
-                                <div class="text-center text-casino-muted text-sm py-8 border border-dashed border-white/10 rounded-xl">
-                                    Свободное место
-                                </div>
+                                <div class="seat-empty">Свободное место</div>
                             }
                         </div>
                     }
                 }
             </div>
         </div>
+    </div>
 
-        <div class="w-full max-w-lg mt-4">
-            @if (_me is not null)
+    @* Fixed bottom dock: bets + actions always visible on mobile *@
+    @if (_me is not null)
+    {
+        <div class="game-dock">
+            <BettingPanel Phase="@(_state?.Phase ?? GamePhase.Betting)"
+                          Chips="@_me.Chips"
+                          CurrentBet="@_me.CurrentBet"
+                          HasPlacedBet="@_me.HasPlacedBet"
+                          IsBankrupt="@_me.IsBankrupt"
+                          OnPlaceBet="PlaceBet" />
+
+            @if (IsMyTurn && _activeHand is not null)
             {
-                <BettingPanel Phase="@(_state?.Phase ?? GamePhase.Betting)"
-                              Chips="@_me.Chips"
-                              CurrentBet="@_me.CurrentBet"
-                              HasPlacedBet="@_me.HasPlacedBet"
-                              IsBankrupt="@_me.IsBankrupt"
-                              OnPlaceBet="PlaceBet" />
-
-                @if (IsMyTurn && _activeHand is not null)
-                {
-                    <div class="action-panel glass-panel p-4 mt-4 flex gap-2 flex-wrap justify-center animate-slide-up">
-                        <button class="btn-emerald flex-1 min-w-[5rem]" @onclick="() => DoAction(GameAction.Hit)">Hit</button>
-                        <button class="btn-gold flex-1 min-w-[5rem]" @onclick="() => DoAction(GameAction.Stand)">Stand</button>
-                        @if (CanDouble)
-                        {
-                            <button class="btn-chip flex-1 min-w-[5rem]" @onclick="() => DoAction(GameAction.Double)">Double</button>
-                        }
-                        @if (CanSplit)
-                        {
-                            <button class="btn-chip flex-1 min-w-[5rem]" @onclick="() => DoAction(GameAction.Split)">Split</button>
-                        }
-                    </div>
-                }
+                <div class="action-panel">
+                    <button class="btn-emerald action-btn" @onclick="() => DoAction(GameAction.Hit)">Hit</button>
+                    <button class="btn-gold action-btn" @onclick="() => DoAction(GameAction.Stand)">Stand</button>
+                    @if (CanDouble)
+                    {
+                        <button class="btn-chip action-btn" @onclick="() => DoAction(GameAction.Double)">×2</button>
+                    }
+                    @if (CanSplit)
+                    {
+                        <button class="btn-chip action-btn" @onclick="() => DoAction(GameAction.Split)">Split</button>
+                    }
+                </div>
             }
         </div>
-    </div>
+    }
 </div>
 
 @code {
@@ -106,6 +140,8 @@
     private bool isRetrying;
     private bool isLeaving;
     private bool IsMyTurn => _me is not null && _state?.ActivePlayerId == _me.Id;
+    private IEnumerable<PlayerDto> OtherPlayers =>
+        _state?.Players.Where(p => p.Id != _me?.Id) ?? [];
     private bool CanDouble => _activeHand is not null && _me is not null &&
                               _activeHand.Cards.Count == 2 && _me.Chips >= _activeHand.Bet;
     private bool CanSplit => _activeHand is not null && _me is not null &&
