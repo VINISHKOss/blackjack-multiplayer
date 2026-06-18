@@ -747,22 +747,69 @@
     }
 
     .game-header {
-        padding: 0.75rem 1rem;
+        padding: 0.75rem clamp(1rem, 3vw, 2rem);
     }
 
     .game-table-stage {
-        padding: 1.5rem 1rem;
+        width: 100%;
+        max-width: min(96vw, 90rem);
+        margin: 0 auto;
+        padding: 1.5rem clamp(1rem, 3vw, 2rem);
         overflow: visible;
+        align-items: stretch;
+    }
+
+    .game-dealer-zone {
+        max-width: none;
+        width: 100%;
+        margin-bottom: 0.75rem;
+    }
+
+    .game-dealer-zone .dealer-hand--compact .dealer-hand__label {
+        font-size: 0.875rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .game-dealer-zone .dealer-hand--compact .playing-card {
+        width: 4rem;
+        height: 6rem;
+    }
+
+    .game-dealer-zone .dealer-hand--compact .card-rank { font-size: 1.25rem; }
+    .game-dealer-zone .dealer-hand--compact .card-suit { font-size: 1.5rem; }
+
+    .table-felt.desktop-only {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 3rem;
+        padding: 2rem clamp(1.25rem, 3vw, 3rem) 2.5rem;
+    }
+
+    .table-felt .seat-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 1.25rem 0.75rem;
+    }
+
+    .table-felt .seat-empty {
+        padding: 1.5rem 0.5rem;
+        font-size: 0.8125rem;
     }
 
     .game-dock {
         position: static;
         background: transparent;
         border-top: none;
-        max-width: 32rem;
+        max-width: min(96vw, 90rem);
         margin: 0 auto;
         width: 100%;
-        padding: 0 1rem 1.5rem;
+        padding: 0 clamp(1rem, 3vw, 2rem) 1.5rem;
+    }
+
+    .betting-panel {
+        background: rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1rem;
     }
 
     .action-panel {
