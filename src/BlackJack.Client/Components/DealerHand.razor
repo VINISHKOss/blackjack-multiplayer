@@ -8,8 +8,9 @@
         {
             var card = Dealer.Cards[i];
             var isFlipping = _flippingIndices.Contains(i);
-            <div class="playing-card @(isFlipping ? "animate-card-flip" : "animate-deal")"
-                 style="@(isFlipping ? "" : $"animation-delay: {i * 150}ms")"
+            var isNewCard = !isFlipping && i >= _previousCardCount;
+            <div class="playing-card @(isFlipping ? "animate-card-flip" : isNewCard ? "animate-deal" : "")"
+                 style="@(isNewCard ? $"animation-delay: {i * 150}ms" : null)"
                  data-face-down="@card.IsFaceDown">
                 <div class="card-inner @(card.IsFaceDown ? "is-face-down" : "is-face-up")">
                     <div class="card-back"></div>
@@ -45,10 +46,12 @@
 
     private readonly HashSet<int> _flippingIndices = [];
     private List<CardDto> _previousCards = [];
+    private int _previousCardCount;
 
     protected override void OnParametersSet()
     {
         _flippingIndices.Clear();
+        _previousCardCount = _previousCards.Count;
 
         for (var i = 0; i < Dealer.Cards.Count; i++)
         {

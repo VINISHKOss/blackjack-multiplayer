@@ -29,8 +29,9 @@
                 @for (var i = 0; i < hand.Cards.Count; i++)
                 {
                     var card = hand.Cards[i];
-                    <div class="playing-card animate-deal"
-                         style="animation-delay: @(delay + i * 120)ms"
+                    var isNewCard = ShouldAnimateDeal(h, i);
+                    <div class="playing-card @(isNewCard ? "animate-deal" : "")"
+                         style="@(isNewCard ? $"animation-delay: {delay + i * 120}ms" : null)"
                          data-face-down="@card.IsFaceDown">
                         @if (card.IsFaceDown)
                         {
@@ -77,6 +78,23 @@
     [Parameter] public GamePhase Phase { get; set; }
     [Parameter] public string? LastAction { get; set; }
     [Parameter] public bool Compact { get; set; }
+
+    private int[] _previousHandCardCounts = [];
+
+    private bool ShouldAnimateDeal(int handIndex, int cardIndex)
+    {
+        if (handIndex >= _previousHandCardCounts.Length)
+            return true;
+
+        return cardIndex >= _previousHandCardCounts[handIndex];
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        _previousHandCardCounts = Hands.Count == 0
+            ? []
+            : Hands.Select(h => h.Cards.Count).ToArray();
+    }
 
     private static string ResultLabel(HandResult r) => r switch
     {
